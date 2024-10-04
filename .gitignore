@@ -49,3 +49,6 @@ client/*.ntvs*
 client/*.njsproj
 client/*.sln
 client/*.sw?
+
+server/src/main/resources/application.yml
+server/src/main/resources/application.yml

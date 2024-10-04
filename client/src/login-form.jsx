@@ -1,7 +1,10 @@
 import { useState } from "react";
 import genericPostService from "./service/genericPostService";
+import useAuth from "./context/useAuth";
 
 export default function LoginForm() {
+  const { login } = useAuth();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -43,6 +46,7 @@ export default function LoginForm() {
 
       const response = await genericPostService("auth/login", formData);
       console.log(response);
+      login(response);
     } else {
       console.log("Form has errors");
     }
