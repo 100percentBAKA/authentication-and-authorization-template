@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.custom-textbox {
+  @apply px-4 py-2 rounded-md w-full;
+}
+
+.error-text {
+  @apply text-[12px] text-red-500 mt-2;
+}
