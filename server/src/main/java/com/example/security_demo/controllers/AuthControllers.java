@@ -1,6 +1,7 @@
 package com.example.security_demo.controllers;
 
-import org.springframework.web.bind.annotation.RestController;
+import com.example.security_demo.dtos.ResponseMessageDTO;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.security_demo.dtos.JwtResponseDTO;
 import com.example.security_demo.dtos.LoginDTO;
@@ -23,9 +24,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,11 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 
 @RestController
@@ -50,16 +43,11 @@ public class AuthControllers {
     private final PasswordEncoder passwordEncoder;
     private final JWTService jwtService;
 
-    AuthControllers(AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, PasswordEncoder passwordEncoder, JWTService jwtService) {
+    public AuthControllers(AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, PasswordEncoder passwordEncoder, JWTService jwtService) {
         this.customUserDetailsService = customUserDetailsService;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-    }
-
-    @GetMapping("/test")
-    public String getTester() {
-        return new String("Hello this is tester dess");
     }
     
     @PostMapping("/login")
@@ -115,25 +103,49 @@ public class AuthControllers {
             return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
         }
     }
-    
+
+//    @PostMapping("/register")
+//    public ResponseEntity<?> register(@Valid @RequestBody User body, BindingResult result) {
+//        if (result.hasErrors()) {
+//            Map<String, String> errorResponse = new HashMap<>();
+//            errorResponse.put("message", Objects.requireNonNull(result.getFieldError()).getDefaultMessage());
+//            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+//        }
+//
+//        // validation check done
+//
+//        if (customUserDetailsService.existsByEmail(body.getEmail())) {
+//            Map<String, String> errorResponse = new HashMap<>();
+//            errorResponse.put("message", "Email is already taken!");
+//            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+//        }
+//
+//        // email check done
+//
+//        User newUser = new User();
+//        newUser.setEmail(body.getEmail());
+//        newUser.setPassword(passwordEncoder.encode(body.getPassword()));
+//        newUser.setFirstName(body.getFirstName());
+//        newUser.setLastName(body.getLastName());
+//        newUser.setUserAuthority(body.getUserAuthority());
+//
+//        customUserDetailsService.addUser(newUser);
+//
+//        Map<String, String> successResponse = new HashMap<>();
+//        successResponse.put("message", "User registered successfully");
+//
+//        return new ResponseEntity<>(successResponse, HttpStatus.OK);
+//    }
+
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody User body, BindingResult result) {
-        if(result.hasErrors()) {
-            return ResponseEntity.badRequest().body(
-                Objects.requireNonNull(result.getFieldError()).getDefaultMessage()
-            );
-//            return ResponseEntity.badRequest().body(
-//                    result.getFieldError().getDefaultMessage()
-//            );
+    public ResponseEntity<ResponseMessageDTO> register(@Valid @RequestBody User body, BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(new ResponseMessageDTO(result.getFieldError().getDefaultMessage()));
         }
 
-        // validation check done 
-
-        if(customUserDetailsService.existsByEmail(body.getEmail())) {
-            return new ResponseEntity<>("Email is already taken!", HttpStatus.BAD_REQUEST);
+        if (customUserDetailsService.existsByEmail(body.getEmail())) {
+            return ResponseEntity.badRequest().body(new ResponseMessageDTO("Email is already taken!"));
         }
-
-        // email check done
 
         User newUser = new User();
         newUser.setEmail(body.getEmail());
@@ -144,9 +156,10 @@ public class AuthControllers {
 
         customUserDetailsService.addUser(newUser);
 
-        return new ResponseEntity<>("User registered successfully", HttpStatus.OK);
+        return ResponseEntity.ok(new ResponseMessageDTO("User registered successfully"));
     }
-    
+
+
     // @PostMapping("/refresh")
     // public ResponseEntity<?> getAccessToken(@RequestBody String refreshToken) {
     //     try {

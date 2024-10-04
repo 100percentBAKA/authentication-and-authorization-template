@@ -49,6 +49,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())
         .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**", "/public/**").permitAll()
@@ -65,21 +66,18 @@ public class SecurityConfig {
 
             return http.build();
     }
-    
 
-     @Bean
-      public CorsConfigurationSource corsConfigurationSource() {
-            CorsConfiguration configuration = new CorsConfiguration();
-            configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174"));
-            // configuration.setAllowedHeaders(List.of("*"));
-            // configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH"));
-            configuration.setAllowCredentials(true);
-
-            UrlBasedCorsConfigurationSource corsConfigurationSource = new UrlBasedCorsConfigurationSource();
-            corsConfigurationSource.registerCorsConfiguration("/**", configuration);
-
-            return corsConfigurationSource;
-      }
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
     // @Bean
     // public UserDetailsService userDetailsService() {
