@@ -100,7 +100,7 @@ public class AuthControllers {
             return new ResponseEntity<>(new JwtResponseDTO(accessToken, roles), HttpStatus.OK);
         }
         catch (Exception ex) {
-            return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>(new ResponseMessageDTO("Invalid Credentials"), HttpStatus.UNAUTHORIZED);
         }
     }
 
