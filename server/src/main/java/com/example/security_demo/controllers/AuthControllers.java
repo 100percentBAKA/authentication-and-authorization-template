@@ -123,7 +123,7 @@ public class AuthControllers {
             response.addCookie(userRoles);
             // return new ResponseEntity<>(new JwtResponseDTO(accessToken, roles), HttpStatus.OK);
 
-            return ResponseEntity.status(HttpStatus.OK).body("User logged in successfully");
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessageDTO("User logged in successfully"));
         }
         catch (Exception ex) {
             return new ResponseEntity<>(new ResponseMessageDTO("Invalid Credentials"), HttpStatus.UNAUTHORIZED);
