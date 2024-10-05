@@ -3,40 +3,63 @@ import { useEffect, useState, createContext } from "react";
 const AuthContext = createContext();
 
 const AuthWrapper = ({ children }) => {
-  const [accessToken, setAccessToken] = useState("");
   const [isAuth, setIsAuth] = useState(false);
   const [roles, setRoles] = useState("ROLE_USER");
+  const [userEmail, setUserEmail] = useState("");
 
-  const logout = () => {
-    setAccessToken(null);
-    setRoles("ROLE_USER");
-    setIsAuth(false);
-  };
-
-  const login = (responseBody) => {
-    setAccessToken(responseBody.accessToken);
-    setRoles(responseBody.roles[0]);
-    setIsAuth(true);
+  const getCookieValue = (name) => {
+    const cookies = document.cookie.split("; ");
+    for (let cookie of cookies) {
+      const [key, value] = cookie.split("=");
+      if (key === name) {
+        return decodeURIComponent(value);
+      }
+    }
+    return null;
   };
 
   useEffect(() => {
-    if (accessToken) {
-      console.log("Access Token:", accessToken);
-    }
-  }, [accessToken]); // This effect runs when accessToken changes
+    const email = getCookieValue("userEmail");
+    const rolesFromCookie = getCookieValue("userRoles");
 
-  useEffect(() => {
-    if (roles) {
-      console.log("Roles:", roles);
+    if (email) {
+      setUserEmail(email);
     }
-  }, [roles]); // This effect runs when roles change
+    if (rolesFromCookie) {
+      setRoles(rolesFromCookie); // Set roles from cookie
+      setIsAuth(true); // Set auth status to true if roles exist
+    }
+  }, []);
+
+  // const logout = () => {
+  //   setRoles("ROLE_USER");
+  //   setUserEmail("");
+  //   setIsAuth(false);
+  // };
+
+  // const login = (responseBody) => {
+  //   setRoles(responseBody.roles[0]);
+  //   setIsAuth(true);
+  // };
+
+  // useEffect(() => {
+  //   if (roles) {
+  //     console.log("Roles:", roles);
+  //   }
+  // }, [roles]);
+
+  // useEffect(() => {
+  //   if (userEmail) {
+  //     console.log("User Email:", userEmail);
+  //   }
+  // }, [userEmail]);
 
   return (
     <AuthContext.Provider
       value={{
-        accessToken,
-        logout,
-        login,
+        isAuth,
+        roles,
+        userEmail,
       }}
     >
       {children}
