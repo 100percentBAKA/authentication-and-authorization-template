@@ -1,5 +1,6 @@
 package com.example.security_demo.services;
 
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,18 +20,22 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JWTService {
 
-    private byte[] keyGen;
+    private final byte[] keyGen;
+
+    // ! NOT RECOMMEND TO GENERATE A NEW TOKEN
+//    public JWTService() {
+//        try {
+//            keyGen = KeyGenerator.getInstance("HmacSHA256").generateKey().getEncoded();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     public JWTService() {
-        try {
-            keyGen = KeyGenerator.getInstance("HmacSHA256").generateKey().getEncoded();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+        this.keyGen = "daf66e01593f61a15b857cf433aae03a005812b31234e149036bcc8dee755dbb".getBytes(StandardCharsets.UTF_8);
     }
 
     // ! JWT UTIL METHODS
-
     private SecretKey getKey() {
         return Keys.hmacShaKeyFor(keyGen);
     }
@@ -48,14 +53,14 @@ public class JWTService {
         return claimResolver.apply(claims);
     }
 
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-    
     public String generateToken(String username, long time) {
         Map<String, Object> claims  = new HashMap<>();
 
@@ -74,6 +79,10 @@ public class JWTService {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public boolean validateToken(String token) {
+        return isTokenExpired(token);
     }
     
     public boolean validateToken(String token, UserDetails user) {

@@ -69,7 +69,7 @@ public class AuthControllers {
             // now the auth obj is available to the security filter chain
 
             // returning the refresh and access tokens
-            String accessToken = jwtService.generateToken(body.getEmail(), 1000 * 60 * 1); // 10 mins
+            String accessToken = jwtService.generateToken(body.getEmail(), 1000 * 60 * 10); // 10 mins
             String refreshToken = jwtService.generateToken(body.getEmail(), 1000 * 60 * 60 * 24 * 7); // 7 days
             
             // ! OLD METHOD
@@ -90,14 +90,40 @@ public class AuthControllers {
 
             response.addCookie(refreshTokenCookie);
 
+            Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
+            accessTokenCookie.setHttpOnly(true);
+            accessTokenCookie.setSecure(true); 
+            accessTokenCookie.setPath("/");
+            accessTokenCookie.setMaxAge(1000 * 60 * 60 * 24 * 7); // 710 mins 
+
+            response.addCookie(accessTokenCookie);
+
             // now return the JwtResponseDTO
             
             // ! before doing that lets get the list of all user roles
-            List<String> roles = authObject.getAuthorities().stream()
+            String currentUser = authObject.getName();
+            String roles = authObject.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-            
-            return new ResponseEntity<>(new JwtResponseDTO(accessToken, roles), HttpStatus.OK);
+                .collect(Collectors.joining(currentUser));
+
+            Cookie userEmail = new Cookie("userEmail", currentUser);
+            userEmail.setHttpOnly(false);
+            userEmail.setSecure(true); 
+            userEmail.setPath("/");
+            userEmail.setMaxAge(1000 * 60 * 60 * 24 * 7);
+
+            response.addCookie(userEmail);
+
+            Cookie userRoles = new Cookie("userRoles", roles);
+            userRoles.setHttpOnly(false);
+            userRoles.setSecure(true); 
+            userRoles.setPath("/");
+            userRoles.setMaxAge(1000 * 60 * 60 * 24 * 7);
+
+            response.addCookie(userRoles);
+            // return new ResponseEntity<>(new JwtResponseDTO(accessToken, roles), HttpStatus.OK);
+
+            return ResponseEntity.status(HttpStatus.OK).body("User logged in successfully");
         }
         catch (Exception ex) {
             return new ResponseEntity<>(new ResponseMessageDTO("Invalid Credentials"), HttpStatus.UNAUTHORIZED);

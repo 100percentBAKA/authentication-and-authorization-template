@@ -7,13 +7,11 @@ import lombok.Setter;
 
 @Getter @Setter
 public class JwtResponseDTO {
-    private String accessToken;
-    private final String tokenType;
+    private String username;
     private List<String> roles;
 
-    public JwtResponseDTO(String accessToken, List<String> roles) {
-        this.accessToken = accessToken;
-        this.tokenType = "bearer";
+    public JwtResponseDTO(String username, List<String> roles) {
+        this.username = username;
         this.roles = roles;
     }
 }
