@@ -6,6 +6,7 @@ const AuthWrapper = ({ children }) => {
   const [isAuth, setIsAuth] = useState(false);
   const [roles, setRoles] = useState("ROLE_USER");
   const [userEmail, setUserEmail] = useState("");
+  const [loading, setLoading] = useState(true); // New loading state
 
   const getCookieValue = (name) => {
     const cookies = document.cookie.split("; ");
@@ -26,33 +27,12 @@ const AuthWrapper = ({ children }) => {
       setUserEmail(email);
     }
     if (rolesFromCookie) {
-      setRoles(rolesFromCookie); // Set roles from cookie
-      setIsAuth(true); // Set auth status to true if roles exist
+      setRoles(rolesFromCookie);
+      setIsAuth(true);
     }
+
+    setLoading(false);
   }, []);
-
-  // const logout = () => {
-  //   setRoles("ROLE_USER");
-  //   setUserEmail("");
-  //   setIsAuth(false);
-  // };
-
-  // const login = (responseBody) => {
-  //   setRoles(responseBody.roles[0]);
-  //   setIsAuth(true);
-  // };
-
-  // useEffect(() => {
-  //   if (roles) {
-  //     console.log("Roles:", roles);
-  //   }
-  // }, [roles]);
-
-  // useEffect(() => {
-  //   if (userEmail) {
-  //     console.log("User Email:", userEmail);
-  //   }
-  // }, [userEmail]);
 
   return (
     <AuthContext.Provider
@@ -60,6 +40,7 @@ const AuthWrapper = ({ children }) => {
         isAuth,
         roles,
         userEmail,
+        loading,
       }}
     >
       {children}
