@@ -1,5 +1,8 @@
 package com.example.security_demo.controllers;
 
+import com.example.security_demo.dtos.ResponseMessageDTO;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -12,8 +15,8 @@ public class HelloController {
     }
 
     @GetMapping("/private")
-    public String getPrivateMethod() {
-        return new String("This is only for paid users 🤫");
+    public ResponseEntity<?> getPrivateMethod() {
+        return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessageDTO("This is only for paid users and admin"));
     }
 
     @GetMapping("/admin")
