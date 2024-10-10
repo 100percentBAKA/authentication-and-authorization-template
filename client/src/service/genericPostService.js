@@ -19,7 +19,8 @@ const genericPostService = async (endpoint, data) => {
         return response.json();
     }
     catch (error) {
-        console.error('Error during request:', error.message);
+        console.error('Error fetching data:', error);
+        alert('Error during request:', error.message);
         return { message: error.message };
     }
 };
