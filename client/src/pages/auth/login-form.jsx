@@ -1,5 +1,8 @@
 import { useState } from "react";
-import genericPostService from "./service/genericPostService";
+import useAuth from "../../context/useAuth";
+import genericPostService from "../../service/genericPostService";
+import { Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function LoginForm() {
   const [formData, setFormData] = useState({
@@ -7,7 +10,15 @@ export default function LoginForm() {
     password: "",
   });
 
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const path = location.state?.from?.pathname || "/"; // ! location.state?.from, returns you the location obj, we need the pathname field from it
+  // console.log("Path: " + path);
+
   const [errors, setErrors] = useState({});
+
+  const { setIsAuth } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,6 +54,13 @@ export default function LoginForm() {
 
       const response = await genericPostService("auth/login", formData);
       console.log(response);
+
+      if (response) {
+        setIsAuth(true);
+
+        // ! navigate back to previously requested route
+        navigate(path, { replace: true });
+      }
     } else {
       console.log("Form has errors");
     }
@@ -52,7 +70,7 @@ export default function LoginForm() {
     <section className="w-screen h-screen flex flex-row">
       <div className="hidden md:flex flex-1 border-2"></div>
       <div className="flex-1 p-3 md:p-10">
-        <div className="w-full px-4 bg-red-200 rounded-md">
+        <div className="w-full px-4 bg-red-200 rounded-md flex flex-col space-y-2">
           <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
             <div className="text-3xl pt-8 pb-6">Login</div>
 
@@ -97,6 +115,12 @@ export default function LoginForm() {
               Login
             </button>
           </form>
+
+          <div>
+            <Link to="/auth/register" className="underline">
+              Yet to register ?
+            </Link>
+          </div>
         </div>
       </div>
     </section>

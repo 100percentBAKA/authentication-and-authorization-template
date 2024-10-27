@@ -1,5 +1,6 @@
 import { useState } from "react";
-import genericPostService from "./service/genericPostService";
+import genericPostService from "../../service/genericPostService";
+import { Link } from "react-router-dom";
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -67,7 +68,7 @@ export default function RegisterForm() {
     <section className="w-screen h-screen flex flex-row">
       <div className="hidden md:flex flex-1 border-2"></div>
       <div className="flex-1 p-3 md:p-10">
-        <div className="w-full px-4 bg-red-200 rounded-md">
+        <div className="w-full px-4 bg-red-200 rounded-md flex flex-col space-y-2">
           <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
             <div className="text-3xl pt-8 pb-6">Sign Up</div>
 
@@ -183,6 +184,10 @@ export default function RegisterForm() {
               Submit
             </button>
           </form>
+
+          <Link to="/auth/login" className="underline">
+            Already Registered ?
+          </Link>
         </div>
       </div>
     </section>

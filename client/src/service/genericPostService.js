@@ -16,12 +16,18 @@ const genericPostService = async (endpoint, data) => {
             throw new Error(errorData.message || "Unknown error");
         }
 
-        return response.json();
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(responseData.message || "Unknown error");
+        }
+
+        return { status: response.status, data: responseData };
     }
     catch (error) {
         console.error('Error fetching data:', error);
         alert('Error during request:', error.message);
-        return { message: error.message };
+        return { status: 500, message: error.message };
     }
 };
 
