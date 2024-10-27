@@ -1,9 +1,8 @@
 package com.example.security_demo.controllers;
 
-import com.example.security_demo.dtos.ResponseMessageDTO;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.security_demo.dtos.JwtResponseDTO;
+import com.example.security_demo.dtos.ApiResponseDTO;
 import com.example.security_demo.dtos.LoginDTO;
 import com.example.security_demo.models.User;
 import com.example.security_demo.services.CustomUserDetailsService;
@@ -13,7 +12,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,15 +27,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 @RestController
 @RequestMapping("/auth")
+@Slf4j
 public class AuthControllers {
 
     // @Autowired
@@ -42,6 +44,12 @@ public class AuthControllers {
     private final CustomUserDetailsService customUserDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final JWTService jwtService;
+
+    @Value("${myapp.access-maxage}")
+    private String accessMaxAge;
+
+    @Value("${myapp.refresh-maxage}")
+    private String refreshMaxAge;
 
     public AuthControllers(AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, PasswordEncoder passwordEncoder, JWTService jwtService) {
         this.customUserDetailsService = customUserDetailsService;
@@ -69,8 +77,8 @@ public class AuthControllers {
             // now the auth obj is available to the security filter chain
 
             // returning the refresh and access tokens
-            String accessToken = jwtService.generateToken(body.getEmail(), 1000 * 60 * 10); // 10 mins
-            String refreshToken = jwtService.generateToken(body.getEmail(), 1000 * 60 * 60 * 24 * 7); // 7 days
+            String accessToken = jwtService.generateToken(body.getEmail(), Integer.parseInt(accessMaxAge)); 
+            String refreshToken = jwtService.generateToken(body.getEmail(), Integer.parseInt(refreshMaxAge)); 
             
             // ! OLD METHOD
 
@@ -86,7 +94,7 @@ public class AuthControllers {
             refreshTokenCookie.setHttpOnly(true);
             refreshTokenCookie.setSecure(true); 
             refreshTokenCookie.setPath("/");
-            refreshTokenCookie.setMaxAge(1000 * 60 * 60 * 24 * 7); // 7 days
+            refreshTokenCookie.setMaxAge(Integer.parseInt(refreshMaxAge));
 
             response.addCookie(refreshTokenCookie);
 
@@ -94,7 +102,7 @@ public class AuthControllers {
             accessTokenCookie.setHttpOnly(true);
             accessTokenCookie.setSecure(true); 
             accessTokenCookie.setPath("/");
-            accessTokenCookie.setMaxAge(1000 * 60 * 60 * 24 * 7); // 710 mins 
+            accessTokenCookie.setMaxAge(Integer.parseInt(accessMaxAge)); 
 
             response.addCookie(accessTokenCookie);
 
@@ -110,7 +118,7 @@ public class AuthControllers {
             userEmail.setHttpOnly(false);
             userEmail.setSecure(true); 
             userEmail.setPath("/");
-            userEmail.setMaxAge(1000 * 60 * 60 * 24 * 7);
+            userEmail.setMaxAge(Integer.parseInt(refreshMaxAge));
 
             response.addCookie(userEmail);
 
@@ -118,15 +126,15 @@ public class AuthControllers {
             userRoles.setHttpOnly(false);
             userRoles.setSecure(true); 
             userRoles.setPath("/");
-            userRoles.setMaxAge(1000 * 60 * 60 * 24 * 7);
+            userRoles.setMaxAge(Integer.parseInt(refreshMaxAge));
 
             response.addCookie(userRoles);
             // return new ResponseEntity<>(new JwtResponseDTO(accessToken, roles), HttpStatus.OK);
 
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessageDTO("User logged in successfully"));
+            return ResponseEntity.status(HttpStatus.OK).body(new ApiResponseDTO<String>("User Logged in successfully"));
         }
         catch (Exception ex) {
-            return new ResponseEntity<>(new ResponseMessageDTO("Invalid Credentials"), HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponseDTO<String>("User login failed", ex.getMessage(), false));
         }
     }
 
@@ -164,13 +172,17 @@ public class AuthControllers {
 //    }
 
     @PostMapping("/register")
-    public ResponseEntity<ResponseMessageDTO> register(@Valid @RequestBody User body, BindingResult result) {
+    public ResponseEntity<?> register(@Valid @RequestBody User body, BindingResult result) {
         if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body(new ResponseMessageDTO(result.getFieldError().getDefaultMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponseDTO<String>("Errors in the request body", result.getFieldError().getDefaultMessage())
+            );
         }
 
         if (customUserDetailsService.existsByEmail(body.getEmail())) {
-            return ResponseEntity.badRequest().body(new ResponseMessageDTO("Email is already taken!"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponseDTO<String>("Email already in use")
+            );
         }
 
         User newUser = new User();
@@ -182,7 +194,9 @@ public class AuthControllers {
 
         customUserDetailsService.addUser(newUser);
 
-        return ResponseEntity.ok(new ResponseMessageDTO("User registered successfully"));
+        return ResponseEntity.status(HttpStatus.OK).body(
+            new ApiResponseDTO<>("User registered Successfully")
+        );
     }
 
 
@@ -280,7 +294,9 @@ public class AuthControllers {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(roles);
+        return ResponseEntity.status(HttpStatus.OK).body(
+            new ApiResponseDTO<List<String>>("User roles", roles)
+        );
     }
     
 }

@@ -197,11 +197,15 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import io.jsonwebtoken.JwtException;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -213,15 +217,37 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
     private final JWTService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
 
+    @Value("${myapp.access-maxage}")
+    private String accessMaxAge;
+
     public JwtFilter(JWTService jwtService, CustomUserDetailsService customUserDetailsService) {
         this.jwtService = jwtService;
         this.customUserDetailsService = customUserDetailsService;
+    }
+
+    private void performLogout(HttpServletRequest request, HttpServletResponse response) {
+        // ! logout the user
+        // ! redirect the client to custom logout endpoint
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if(auth != null) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+        SecurityContextHolder.getContext().setAuthentication(null);
+
+        try {
+            response.sendRedirect("/auth/logout");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -246,8 +272,9 @@ public class JwtFilter extends OncePerRequestFilter {
                     .map(Cookie::getValue)
                     .orElse(null);
 
-            if (accessToken == null && refreshToken == null) {
-                throw new JwtException("JWT tokens missing, user needs to re-login");
+            if (refreshToken == null) {
+                performLogout(request, response);
+                return;
             }
 
             String username = null;
@@ -256,7 +283,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 try {
                     username = jwtService.extractUsername(accessToken);
                 } catch (JwtException e) {
-                    // Invalid access token, try to refresh it if refresh token is available
+                    // invalid access token . . . try to refresh it if refresh token is available
                     accessToken = null;
                 }
             }
@@ -266,23 +293,23 @@ public class JwtFilter extends OncePerRequestFilter {
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
                 if (jwtService.validateToken(refreshToken, userDetails)) {
-                    // Generate new access token
-                    accessToken = jwtService.generateToken(username, 1000 * 60 * 10); // 10 minutes
+                    // generate new access token
+                    accessToken = jwtService.generateToken(username, Integer.parseInt(accessMaxAge)); 
 
                     Cookie newAccessTokenCookie = new Cookie("accessToken", accessToken);
                     newAccessTokenCookie.setHttpOnly(true);
                     newAccessTokenCookie.setSecure(true);
                     newAccessTokenCookie.setPath("/");
-                    newAccessTokenCookie.setMaxAge(1000 * 60 * 60 * 24 * 7);
+                    newAccessTokenCookie.setMaxAge(Integer.parseInt(accessMaxAge));
 
                     response.addCookie(newAccessTokenCookie);
 
-                    // Set authentication
+                    // set authentication
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 } else {
-                    throw new JwtException("Invalid refresh token, user needs to re-login");
+                    performLogout(request, response);
                 }
             } else if (username != null) {
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
@@ -306,3 +333,4 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+

@@ -1,6 +1,6 @@
 package com.example.security_demo.controllers;
 
-import com.example.security_demo.dtos.ResponseMessageDTO;
+import com.example.security_demo.dtos.ApiResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,17 +10,23 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class HelloController {
     
     @GetMapping("/public")
-    public String getPublicMethod() {
-        return new String("This is free for everyone");
+    public ResponseEntity<?> getPublicMethod() {
+        return ResponseEntity.status(HttpStatus.OK).body(
+            new ApiResponseDTO<>("This endpoint is publicly available")
+        );
     }
 
     @GetMapping("/private")
     public ResponseEntity<?> getPrivateMethod() {
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessageDTO("This is only for paid users and admin"));
+        return ResponseEntity.status(HttpStatus.OK).body(
+            new ApiResponseDTO<>("This endpoint is available only for pro users")
+        );
     }
 
     @GetMapping("/admin")
-    public String getAdminMethod() {
-        return new String("This is only for the admin, if you are not admin, please leave 😢");
+    public ResponseEntity<?> getAdminMethod() {
+        return ResponseEntity.status(HttpStatus.OK).body(
+            new ApiResponseDTO<>("This endpoint is available to the admin")
+        );
     }
 }
